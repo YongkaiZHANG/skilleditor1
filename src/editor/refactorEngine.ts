@@ -17,7 +17,7 @@ export const refactorSkillCode = (code: string): RefactorResult => {
   let replacedLet = false;
   refactored = refactored.replace(letRegex, (match, vars) => {
     const varList = vars.trim().split(/\s+/);
-    if (varList.length > 0 && !match.includes('(')) {
+    if (varList.length > 0 && !vars.includes('(')) {
       replacedLet = true;
       return `let( (${varList.join(' ')})\n`;
     }
@@ -26,7 +26,7 @@ export const refactorSkillCode = (code: string): RefactorResult => {
   if (replacedLet) explanations.push("Enclosed local variables in 'let' blocks within a list to fix syntax.");
 
   // 2. Optimize foreach loops
-  const foreachRegex = /foreach\(\s*(\w+)\s+([a-zA-Z0-9_]+)\s+result\s*=\s*cons\(.*\s*result\)\s*\)/g;
+  const foreachRegex = /foreach\(\s*(\w+)\s+([a-zA-Z0-9_]+)\s+result\s*=\s*cons\(.*?\s*result\s*\)\s*\)/g;
   let replacedForeach = false;
   refactored = refactored.replace(foreachRegex, (match, item, list) => {
     replacedForeach = true;
@@ -58,7 +58,7 @@ export const refactorSkillCode = (code: string): RefactorResult => {
   if (removedWhitespace) explanations.push("Removed trailing whitespace for cleaner code.");
 
   // 5. Add header if missing
-  if (!refactored.trim().startsWith(';')) {
+  if (!refactored.trim().startsWith(';') && explanations.length > 0) {
     const timestamp = new Date().toISOString().split('T')[0];
     refactored = `; Refactored: ${timestamp}\n; Automated Design Pattern Improvements Applied\n\n${refactored}`;
     explanations.push("Added standard file header documentation.");

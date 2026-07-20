@@ -687,50 +687,7 @@ function App() {
     }
   };
 
-  const handleExpertAnalyze = async (msg: ConsoleMessage) => {
-    const getTimestamp = () => new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    
-    // Set loading state for this message
-    setConsoleOutput(prev => prev.map(m => m.id === msg.id ? { ...m, isExpertAnalyzing: true } : m));
-
-    try {
-      const response = await fetch("/api/expert/analyze", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          error: msg.text,
-          code: content,
-          context: "User is working in the Cadence SKILL IDE."
-        }),
-      });
-
-      const data = await response.json();
-      
-      if (data.error) throw new Error(data.error);
-
-      setConsoleOutput(prev => [
-        ...prev.map(m => m.id === msg.id ? { ...m, isExpertAnalyzing: false } : m),
-        { 
-          id: uuidv4(), 
-          timestamp: getTimestamp(), 
-          type: "info", 
-          text: `*** EXPERT ANALYSIS ***\n\n${data.analysis}` 
-        }
-      ]);
-    } catch (err: any) {
-      setConsoleOutput(prev => [
-        ...prev.map(m => m.id === msg.id ? { ...m, isExpertAnalyzing: false } : m),
-        { 
-          id: uuidv4(), 
-          timestamp: getTimestamp(), 
-          type: "error", 
-          text: `Expert Analysis Failed: ${err.message}` 
-        }
-      ]);
-    }
-  };
-
-  const handleRefactorCode = () => {
+    const handleRefactorCode = () => {
     if (!content) return;
     const result = refactorSkillCode(content);
     if (result.code === content) {
@@ -1008,7 +965,7 @@ function App() {
 
           {isConsoleOpen && (
             <div className="h-64 flex flex-col min-w-0 border-t border-white/[0.04]">
-              <Console messages={consoleOutput} onClear={() => setConsoleOutput([])} onClose={() => setIsConsoleOpen(false)} onApplyQuickFix={handleApplyQuickFix} onCommand={handleConsoleCommand} onExpertAnalyze={handleExpertAnalyze} onRefactor={handleRefactorCode} isSimulating={isSimulating} />
+              <Console messages={consoleOutput} onClear={() => setConsoleOutput([])} onClose={() => setIsConsoleOpen(false)} onApplyQuickFix={handleApplyQuickFix} onCommand={handleConsoleCommand}  onRefactor={handleRefactorCode} isSimulating={isSimulating} />
             </div>
           )}
         </div>
