@@ -51,49 +51,7 @@ import { refactorSkillCode } from "./editor/refactorEngine";
 import { RefactorDiffView } from "./components/RefactorDiffView";
 import manualRawText from "./data/manual.txt?raw";
 
-const DEFAULT_SKILL = `; Cadence SKILL Useful Script
-; ----------------------------------------------------
-; Procedure: alignShapesToOrigin
-; Description: Moves all selected shapes such that the 
-; lower-left corner of their bounding box is exactly at (0, 0).
-; Useful for creating normalized PCells or footprints.
-
-procedure( alignShapesToOrigin()
-    let( (cv selBox minX minY deltaX deltaY count)
-        cv = geGetWindowCellView()
-        
-        ; Calculate the bounding box of the selection
-        selBox = geGetSelSetBBox()
-        
-        if( selBox then
-            ; Extract the lower-left coordinates
-            minX = xCoord(lowerLeft(selBox))
-            minY = yCoord(lowerLeft(selBox))
-            
-            ; Calculate the translation required to hit (0, 0)
-            deltaX = -minX
-            deltaY = -minY
-            
-            count = 0
-            
-            ; Move each selected object by the delta
-            foreach( obj geGetSelSet()
-                dbMoveFig(obj cv list(deltaX:deltaY "R0" 1))
-                count++
-            )
-            
-            printf("*Success* Moved %d objects by (%.3f, %.3f) to align with origin.\\n" count deltaX deltaY)
-        else
-            printf("*Warning* No objects selected. Please select objects to align.\\n")
-        )
-        
-        t
-    )
-)
-
-; Run the procedure if this script is loaded
-; alignShapesToOrigin()
-`;
+const DEFAULT_SKILL = ``;
 
 function App() {
   
@@ -289,10 +247,18 @@ function App() {
       if (saved) {
         try {
           const parsed = typeof saved === "string" ? JSON.parse(saved) : saved;
-          if (parsed && parsed.length > 0) {
-            setFiles(parsed);
-            handleFileSelect(parsed[0].id);
-          }
+          
+            if (parsed && parsed.length > 0) {
+              const migrated = parsed.map((f: any) => {
+                if (f.name === 'main.il' && f.content.includes('; Procedure: alignShapesToOrigin')) {
+                  return { ...f, content: '' };
+                }
+                return f;
+              });
+              setFiles(migrated);
+              handleFileSelect(migrated[0].id);
+            }
+
         } catch (e) {
           console.error(e);
         }
@@ -302,11 +268,19 @@ function App() {
         if (localSaved) {
           try {
             const parsed = JSON.parse(localSaved);
+            
             if (parsed && parsed.length > 0) {
-              setFiles(parsed);
-              handleFileSelect(parsed[0].id);
-              set("ag-skill-files", parsed);
+              const migrated = parsed.map((f: any) => {
+                if (f.name === 'main.il' && f.content.includes('; Procedure: alignShapesToOrigin')) {
+                  return { ...f, content: '' };
+                }
+                return f;
+              });
+              setFiles(migrated);
+              handleFileSelect(migrated[0].id);
+              set("ag-skill-files", migrated);
             }
+
           } catch (e) {
             console.error(e);
           }
@@ -985,6 +959,17 @@ function App() {
                 <button onClick={() => setIsConsoleOpen(!isConsoleOpen)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold tracking-wider uppercase transition-all ${isConsoleOpen ? 'bg-indigo-500/20 text-indigo-300' : 'bg-white/5 hover:bg-white/10 text-[#94a3b8] hover:text-white'}`}>
                   <MessageSquare size={14} />
                   <span className="hidden sm:inline">Console</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(content);
+                    showToast("Code copied to clipboard!");
+                  }} 
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-[#94a3b8] hover:text-white transition-all text-[11px] font-bold tracking-wider uppercase"
+                >
+                  <Copy size={14} />
+                  <span className="hidden sm:inline">Copy</span>
                 </button>
                 <button onClick={() => handleRun(true)} className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/20 transition-all text-[11px] font-bold tracking-wider uppercase">
                   <Bug size={14} />

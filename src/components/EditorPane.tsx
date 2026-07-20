@@ -230,23 +230,27 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
             let closest = '';
             let minDistance = 999;
             for (const valid of allValid) {
-              if (Math.abs(valid.length - word.length) > 2) continue;
+              if (Math.abs(valid.length - word.length) > 3) continue;
               const dist = levenshteinDistance(word, valid);
               if (dist < minDistance) {
                 minDistance = dist;
                 closest = valid;
               }
             }
-            if (minDistance > 0 && minDistance <= 2) {
-              markers.push({
-                message: `Typo detected: Unknown function '${word}'.\nDid you mean '${closest}'?`,
-                severity: monaco.MarkerSeverity.Warning,
-                startLineNumber: i + 1,
-                startColumn: callMatch.index + 1,
-                endLineNumber: i + 1,
-                endColumn: callMatch.index + 1 + word.length,
-              });
+            
+            let message = `Unknown function '${word}'.`;
+            if (minDistance > 0 && minDistance <= 3) {
+              message = `Typo detected: Unknown function '${word}'.\nDid you mean '${closest}'?`;
             }
+            
+            markers.push({
+              message,
+              severity: monaco.MarkerSeverity.Error,
+              startLineNumber: i + 1,
+              startColumn: callMatch.index + 1,
+              endLineNumber: i + 1,
+              endColumn: callMatch.index + 1 + word.length,
+            });
           }
         }
 
@@ -318,8 +322,8 @@ export const EditorPane: React.FC<EditorPaneProps> = ({
       }
 
       const models = monaco.editor.getModels();
-      if (models.length > 0) {
-        const model = models[0];
+      const model = models.find(m => m.uri.path.endsWith(activeFileName)) || models[0];
+      if (model) {
         monaco.editor.setModelMarkers(model, 'skill-linter', markers);
         
         // Add Minimap Decorations for procedure/defun
